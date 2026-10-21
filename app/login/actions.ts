@@ -24,8 +24,25 @@ export async function sendSignInLink(formData: FormData) {
   });
 
   if (error) {
-    console.error("Supabase sign-in link request failed:", error.message);
-    redirect("/login?error=send_failed");
+    const code = error.code?.toLowerCase() ?? "";
+    const message = error.message.toLowerCase();
+    const reason =
+      error.status === 429 || code.includes("rate_limit")
+        ? "rate_limited"
+        : code.includes("not_authorized") || message.includes("not authorized")
+          ? "email_not_authorized"
+          : code.includes("redirect") || message.includes("redirect")
+            ? "redirect_not_allowed"
+            : code.includes("smtp") || message.includes("smtp") || (error.status ?? 0) >= 500
+              ? "smtp_unavailable"
+              : "send_failed";
+
+    console.error("Supabase sign-in link request failed:", {
+      code: error.code,
+      status: error.status,
+      reason,
+    });
+    redirect(`/login?error=${reason}`);
   }
 
   redirect("/login?sent=1");

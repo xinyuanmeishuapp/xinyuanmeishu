@@ -5,7 +5,16 @@ import { sendSignInLink } from "./actions";
 const errorMessages: Record<string, string> = {
   invalid_email: "請輸入有效的電子郵件地址。",
   not_configured: "網站尚未設定 Supabase，請先完成部署環境設定。",
-  send_failed: "目前無法寄送登入連結，請稍後再試或聯絡管理者。",
+  email_not_authorized:
+    "Supabase 預設郵件服務只會寄給專案組織的團隊成員。請先用該團隊 Email 測試；若要寄給其他信箱，需在 Supabase Auth 設定自訂 SMTP。",
+  rate_limited:
+    "寄信次數已達限制，請至少等一小時再試。Supabase 預設郵件服務目前限制約每小時 2 封。",
+  redirect_not_allowed:
+    "登入回呼網址未加入 Supabase 的允許清單。請在 Authentication → URL Configuration 加入目前網址加上 /auth/callback。",
+  smtp_unavailable:
+    "Supabase 郵件服務目前無法寄送。請查看 Supabase Authentication → Logs 的錯誤；預設郵件服務只適合測試。",
+  send_failed:
+    "Supabase 拒絕了寄信要求。請在 Supabase Authentication → Logs 查看最近的登入錯誤；確認帳號已建立、Email 正確，且 redirect URL 已允許。",
   not_admin: "此帳號尚未被授權為管理員。",
   auth_failed: "登入連結無效或已過期，請重新寄送登入連結。",
 };
