@@ -61,7 +61,7 @@ export default async function HomePage({
     return (
       <main className="public-shell">
         <header className="public-header"><strong>心願美術</strong><nav><Link href="/login">登入</Link><Link href="/register">家長註冊</Link></nav></header>
-        <section className="public-hero"><p className="auth-brand">XINYUAN ART STUDIO</p><h1>用畫畫，陪孩子發現自己的世界。</h1><p>課程與會員服務正在準備中，尚未連線資料庫。</p><Link className="public-button" href="/demo/index.html">查看展示版</Link></section>
+        <section className="public-hero"><p className="auth-brand">XINYUAN ART STUDIO</p><h1>用畫畫，陪孩子發現自己的世界。</h1><p>課程與會員服務正在準備中，尚未連線資料庫。</p></section>
       </main>
     );
   }
@@ -185,7 +185,7 @@ export default async function HomePage({
         <div className="public-section-heading"><div><p className="auth-brand">STUDIO NOTES</p><h2>工作室近況</h2></div><p>課程異動、工作室公告，<br />都在這裡與你分享。</p></div>
         {announcements.length ? <div className="public-grid">{announcements.map((item) => <article className="public-card" key={item.id}><p className="public-kicker">{item.category}</p><h3>{item.title}</h3><p>{item.body}</p>{item.published_at && <span className="public-meta">{taipeiDate(item.published_at)}</span>}</article>)}</div> : !loadFailed ? <p>目前沒有最新消息。</p> : null}
       </section>
-      <footer className="public-footer"><span>心願美術</span><span>學員資料僅於登入後提供本人家庭檢視。</span><Link href="/demo/index.html">展示版</Link></footer>
+      <footer className="public-footer"><span>心願美術</span><span>學員資料僅於登入後提供本人家庭檢視。</span></footer>
     </main>
   );
 }

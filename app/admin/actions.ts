@@ -131,7 +131,6 @@ export async function saveAnnouncement(formData: FormData) {
   if (id && !result.data?.length) redirect("/admin/content?error=announcement_not_found");
   revalidatePath("/admin/content");
   revalidatePath("/");
-  revalidatePath("/demo/index.html");
   redirect("/admin/content?saved=announcement");
 }
 
@@ -154,7 +153,6 @@ export async function deleteAnnouncement(formData: FormData) {
 
   revalidatePath("/admin/content");
   revalidatePath("/");
-  revalidatePath("/demo/index.html");
   redirect("/admin/content?saved=announcement_deleted");
 }
 
