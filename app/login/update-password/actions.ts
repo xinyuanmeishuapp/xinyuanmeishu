@@ -9,7 +9,7 @@ export async function updatePassword(formData: FormData) {
   const rawConfirmation = formData.get("confirmPassword");
   const confirmation = typeof rawConfirmation === "string" ? rawConfirmation : "";
 
-  if (password.length < 12 || password.length > 128) {
+  if (!password) {
     redirect("/login/update-password?error=invalid_password");
   }
 
@@ -25,6 +25,16 @@ export async function updatePassword(formData: FormData) {
 
   if (userError || !user) redirect("/login?error=auth_failed");
 
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (profileError || !profile) {
+    console.error("Unable to determine password-reset account role:", profileError?.message);
+    redirect("/login?error=role_check_failed");
+  }
+
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
     console.error("Supabase password update failed:", {
@@ -34,5 +44,5 @@ export async function updatePassword(formData: FormData) {
     redirect("/login/update-password?error=update_failed");
   }
 
-  redirect("/admin");
+  redirect(profile.role === "admin" ? "/admin" : "/my");
 }

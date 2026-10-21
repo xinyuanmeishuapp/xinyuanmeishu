@@ -2,9 +2,9 @@
 
 ## 目前狀態
 
-網站正從靜態展示原型遷移至 Next.js + Supabase。原本的前台保留在 `public\demo\`，網站根目錄暫時導向 `/demo/index.html`。Next.js 已加入受邀管理員 Email＋密碼登入、密碼重設、Supabase cookie session，以及在伺服器端讀取 `profiles.role` 驗證管理員的基礎。
+網站使用 Next.js + Supabase。正式首頁讀取課程資料、唯讀行事曆和最新消息；課程、場次與最新消息均不再有獨立發布開關，新增或儲存後會立即開放或顯示。管理員可新增、編輯及刪除課程、場次和最新消息；已有場次或預約紀錄的課程，以及已有預約紀錄的場次無法刪除，以保留歷史資料。家長可建立帳號、送交家庭／學員登記審核，通過後申請購課、檢視堂數並預約或取消課程。管理員可設定課程名稱與老師、建立單次或每週固定場次、審核家庭、設定 5／10 堂價格與效期、確認收款入帳、管理名額及取消時限。原靜態展示版保留在 `public\demo\`，僅供參考，不是正式資料來源。
 
-管理頁已加入 Supabase `courses` 與 `announcements` 的讀取、新增和編輯，Server Actions 會重新驗證管理員角色並由 RLS 限制寫入。課程基本資料發布後，還沒有實際場次日期、時間及名額管理。家長註冊、家庭／學員建檔、購課收款與預約資料連線仍未完成。展示前台的表單資料仍在瀏覽器 `localStorage`。請勿輸入或收集真實兒童與家庭資料。
+家長及管理員共用 Email＋密碼登入；伺服器依 `profiles.role` 導向及保護頁面，資料庫 RLS 和安全 RPC 控制家庭資料及預約／堂數異動。家長送交資料時須勾選監護人同意，系統記錄同意時間。兒童個資屬敏感資料，請先在測試帳號和測試資料完成整合驗證，再收集真實資料。
 
 ## 本機開發
 
@@ -18,14 +18,20 @@ npm run dev
 
 開啟 `http://localhost:3000`。主要路徑：
 
-- `/demo/index.html`：原靜態展示前台，資料只存在目前瀏覽器。
-- `/login`：管理員 Email＋密碼登入及重設密碼；必須先在 Supabase 建立帳號並授予管理員角色。
-- `/admin`：只有登入且資料庫 `profiles.role` 為 `admin` 才能進入。
+- `/`：可切換月份的唯讀課程行事曆、最新消息及登入後預約入口。
+- `/register`：家長 Email＋密碼註冊；依 Supabase Auth 設定可能需要先驗證 Email。
+- `/register/details`：家長提交家庭及學員資料，等待管理員審核。
+- `/login`：家長與管理員登入／重設密碼。
+- `/my`：家長會員中心預設顯示預約課程，分頁依序為預約課程、預約紀錄、學生資料及購課方案；剩餘堂數在購課方案分頁查看，並提供家庭資料、購課申請及預約／取消。
+- `/admin`：後台首頁，顯示課程行事曆、建立單次或每週固定場次、編輯場次及近期預約紀錄。
+- `/admin/operations`：家庭審核、學員姓名查詢、會員資料、堂數及收款紀錄、待確認收款；只有 `profiles.role = 'admin'` 可進入。
+- `/admin/content`：新增及管理課程名稱、上課老師與最新消息。
+- `/admin/settings`：管理 5／10 堂方案價格、效期與預約取消規則。
 - `/login/update-password`：只在有效的密碼重設 session 中允許設定新密碼。
 
-管理頁可新增和修改課程基本資料（類別、介紹、年齡、扣堂、額外費用、發布狀態）與最新消息（分類、標題、內容、發布狀態）。尚不能建立上課場次，也不會在展示前台讀取這些資料；該整合及場次容量管理會在後續階段完成。
+管理員可設定 5／10 堂方案的金額與效期天數。方案效期自管理員確認收款當日（台灣時區）起算；未填價格／效期或未開放的方案不會提供給家長申請。家長提交的轉帳、現金或 LINE Pay 購課申請都需管理員確認，確認時自動建立已付款方案並記錄購買堂數。管理員可設定開課前幾小時為取消退堂截止；截止前取消退堂，截止後仍可取消但不退堂。
 
-如果未設定 Supabase 環境變數，登入會停用，管理頁不會顯示資料。
+若 Supabase 環境變數未設定，網站會顯示設定提示，不會提供真實會員資料功能。
 
 ## Supabase Auth 設定
 
@@ -44,8 +50,8 @@ npm run dev
    - `https://xinyuanmeishu.vercel.app/auth/callback`
    - `https://xinyuanmeishu.vercel.app/auth/recovery/callback`
 4. 在 Supabase Auth 建立或邀請管理員使用者。初始 migration 的 trigger 會建立其 `profiles` 記錄；之後以 Supabase SQL Editor 將**該使用者的 Auth UUID** 設為 `profiles.role = 'admin'`。不要開放公開註冊者自行選角色。
-5. 初次設定密碼時，於登入頁使用「忘記密碼」寄送重設信，再設定至少 12 個字元的唯一密碼。Supabase 預設郵件服務有收件人和寄送頻率限制；正式使用前應設定自訂 SMTP。
-6. 管理員登入採 Email＋密碼，不會自動建帳。伺服器每次請求都會驗證使用者和 `profiles.role`；資料庫 RLS 是資料存取的最後防線。Supabase Auth 負責安全保存密碼，不自行儲存密碼。
+5. 初次設定密碼時，於登入頁使用「忘記密碼」寄送重設信。網站不另外限制密碼最短／最長字數，但 Supabase Auth 專案設定仍可能限制密碼政策；建議設定難以猜測且不重複使用的密碼。Supabase 預設郵件服務有寄送頻率限制；正式使用前應設定自訂 SMTP。
+6. 家長註冊也使用 Supabase Email＋密碼。若要關閉 Email 驗證，前往 Authentication → Sign In / Providers → Email，關閉 **Confirm Email**；關閉後新帳號會直接登入，不必點驗證信。這也代表系統不再確認使用者擁有該 Email，請以強密碼和管理員家庭審核降低風險。伺服器每次受保護的操作都驗證登入身分／管理員權限；資料庫 RLS 是資料存取的最後防線。Supabase Auth 負責保存密碼，網站不自行儲存密碼。
 
 ## Vercel 部署
 
@@ -59,7 +65,9 @@ npm run dev
 
 ## 資料庫狀態
 
-`supabase\migrations\20261021143000_initial_schema.sql` 是已建立的初始結構，含部分 RLS 和預約／取消 RPC。尚缺家長建立家庭、管理員新增學員／購課／收款、購課堂數入帳及完整 onboarding。已執行過的 migration 不要直接改寫；後續以新的 migration 增補，並先在測試資料和測試專案驗證。
+依序執行 `supabase\migrations\20261021143000_initial_schema.sql`、`supabase\migrations\20261021190000_guardian_operations.sql`、`supabase\migrations\20261021193000_booking_and_purchase_logic.sql`、`supabase\migrations\20261021200500_custom_course_categories.sql`、`supabase\migrations\20261021210000_weekly_class_sessions_and_teachers.sql`、`supabase\migrations\20261021211500_courses_always_available.sql`、`supabase\migrations\20261021213000_announcements_always_published.sql` 及 `supabase\migrations\20261021214000_sessions_always_published.sql`。營運 migration 建立家長登記審核、方案設定、購課請款／收款入帳、取消時限與會員課程預約所需 RPC 和 RLS；後續 migration 固定購課報價／效期、隱藏公開場次人數、阻擋未核准家庭預約與同學員重疊課程、維護場次名額限制，開放自訂課程名稱，新增上課老師欄位與每週固定課程建立 RPC（日期範圍最多 730 天），並將課程、場次及最新消息設為不需獨立發布即可使用。已執行過的 migration 不要直接改寫；每次 schema 更新都新增 migration。
+
+**新增 migration 尚需在 Supabase SQL Editor／受控 migration 工具執行後才可正常運作。**先於測試專案依序執行尚未套用的 migration。使用虛構帳戶與資料驗證：家長和管理員的 RLS 隔離、Email 驗證及密碼流程、家庭審核、三種付款方式、確認收款後堂數／效期、場次名額競爭、報價固定、預約重複與重疊阻擋、取消截止前後的退堂規則，以及每週固定場次遇到重複日期時整批回滾。確認測試成功前，不要讓家長登記真實兒童資料或將新版合併至 Production。
 
 ## 程式修改流程
 

@@ -12,7 +12,11 @@ export async function GET(request: NextRequest) {
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(new URL("/admin", request.url));
+    if (!error) {
+      const next = request.nextUrl.searchParams.get("next");
+      const destination = next === "/register/details" ? next : "/my";
+      return NextResponse.redirect(new URL(destination, request.url));
+    }
   }
 
   return NextResponse.redirect(new URL("/login?error=auth_failed", request.url));

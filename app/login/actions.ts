@@ -30,7 +30,27 @@ export async function signInWithPassword(formData: FormData) {
     redirect("/login?error=invalid_credentials");
   }
 
-  redirect("/admin");
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError || !user) {
+    console.error("Unable to read signed-in user:", userError?.message);
+    redirect("/login?error=role_check_failed");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profileError || !profile) {
+    console.error("Unable to read signed-in profile:", profileError?.message);
+    redirect("/login?error=role_check_failed");
+  }
+  if (profile.role === "admin") redirect("/admin");
+  redirect("/my");
 }
 
 export async function sendPasswordReset(formData: FormData) {

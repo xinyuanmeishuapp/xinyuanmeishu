@@ -23,10 +23,10 @@ export default async function LoginPage({
   return (
     <main className="auth-page">
       <section className="auth-card">
-        <p className="auth-brand">心願美術 · 管理後台</p>
-        <h1>管理者登入</h1>
+        <p className="auth-brand">心願美術 · 會員服務</p>
+        <h1>登入</h1>
         <p className="auth-description">
-          使用已授權的管理員 Email 與密碼登入。
+          家長登入會員中心；管理員登入後會自動進入管理後台。
         </p>
 
         {!configured ? (
@@ -36,7 +36,7 @@ export default async function LoginPage({
         ) : (
           <form action={signInWithPassword} className="auth-form">
             <label htmlFor="email">
-              管理員 Email
+              Email
               <input
                 id="email"
                 name="email"
@@ -55,10 +55,9 @@ export default async function LoginPage({
                 type="password"
                 autoComplete="current-password"
                 required
-                maxLength={128}
               />
             </label>
-            <button type="submit">登入管理後台</button>
+            <button type="submit">登入</button>
           </form>
         )}
 
@@ -79,7 +78,7 @@ export default async function LoginPage({
         {configured && (
           <form action={sendPasswordReset} className="auth-form">
             <label htmlFor="reset-email">
-              忘記密碼？輸入管理員 Email
+              忘記密碼？輸入註冊 Email
               <input
                 id="reset-email"
                 name="email"
@@ -94,11 +93,10 @@ export default async function LoginPage({
           </form>
         )}
 
+        <p className="auth-footnote"><Link href="/register">家長尚未註冊？建立帳號</Link></p>
+        <p className="auth-footnote">管理員身分由資料庫驗證，家長帳號不會取得管理權限。</p>
         <p className="auth-footnote">
-          家長帳號註冊尚未開放。登入只接受已建立的帳號，管理員身分由資料庫驗證。
-        </p>
-        <p className="auth-footnote">
-          <Link href="/demo/index.html">返回網站前台</Link>
+          <Link href="/">返回網站前台</Link>
         </p>
       </section>
     </main>

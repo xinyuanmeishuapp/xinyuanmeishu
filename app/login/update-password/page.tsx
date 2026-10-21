@@ -4,7 +4,7 @@ import { getSupabaseConfig } from "@/lib/supabase/config";
 import { updatePassword } from "./actions";
 
 const errorMessages: Record<string, string> = {
-  invalid_password: "請設定 12 至 128 個字元的密碼。",
+  invalid_password: "請輸入新密碼。",
   password_mismatch: "兩次輸入的密碼不相同。",
   update_failed: "密碼更新失敗，請重新申請密碼重設連結。",
 };
@@ -32,7 +32,7 @@ export default async function UpdatePasswordPage({
         <p className="auth-brand">心願美術 · 管理後台</p>
         <h1>設定新密碼</h1>
         <p className="auth-description">
-          請設定至少 12 個字元的密碼。建議使用其他網站沒有使用過的長密碼。
+          密碼長度依 Supabase 專案設定；建議使用不重複且難以猜測的密碼。
         </p>
         <form action={updatePassword} className="auth-form">
           <label htmlFor="password">
@@ -42,8 +42,6 @@ export default async function UpdatePasswordPage({
               name="password"
               type="password"
               autoComplete="new-password"
-              minLength={12}
-              maxLength={128}
               required
             />
           </label>
@@ -54,8 +52,6 @@ export default async function UpdatePasswordPage({
               name="confirmPassword"
               type="password"
               autoComplete="new-password"
-              minLength={12}
-              maxLength={128}
               required
             />
           </label>
