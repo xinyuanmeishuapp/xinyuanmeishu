@@ -7,6 +7,7 @@ const errorMessages: Record<string, string> = {
   not_configured: "網站尚未設定 Supabase，請先完成部署環境設定。",
   invalid_credentials: "Email 或密碼不正確，請再試一次；首次設定請使用「忘記密碼」建立密碼。",
   reset_send_failed: "目前無法寄出重設密碼信，請稍後再試或查看 Supabase Authentication → Logs。",
+  role_check_failed: "目前無法驗證管理員權限，管理頁未開放。請稍後再試或聯絡系統管理者。",
   not_admin: "此帳號尚未被授權為管理員。",
   auth_failed: "密碼重設連結無效或已過期，請重新申請。",
 };

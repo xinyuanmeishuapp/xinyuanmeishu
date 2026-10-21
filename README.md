@@ -4,7 +4,7 @@
 
 網站正從靜態展示原型遷移至 Next.js + Supabase。原本的前台保留在 `public\demo\`，網站根目錄暫時導向 `/demo/index.html`。Next.js 已加入受邀管理員 Email＋密碼登入、密碼重設、Supabase cookie session，以及在伺服器端讀取 `profiles.role` 驗證管理員的基礎。
 
-此階段尚未完成家長註冊、家庭／學員建檔、購課收款、預約資料連線及正式管理功能。展示前台的表單資料仍在瀏覽器 `localStorage`。請勿輸入或收集真實兒童與家庭資料。
+管理頁已加入 Supabase `courses` 與 `announcements` 的讀取、新增和編輯，Server Actions 會重新驗證管理員角色並由 RLS 限制寫入。課程基本資料發布後，還沒有實際場次日期、時間及名額管理。家長註冊、家庭／學員建檔、購課收款與預約資料連線仍未完成。展示前台的表單資料仍在瀏覽器 `localStorage`。請勿輸入或收集真實兒童與家庭資料。
 
 ## 本機開發
 
@@ -22,6 +22,8 @@ npm run dev
 - `/login`：管理員 Email＋密碼登入及重設密碼；必須先在 Supabase 建立帳號並授予管理員角色。
 - `/admin`：只有登入且資料庫 `profiles.role` 為 `admin` 才能進入。
 - `/login/update-password`：只在有效的密碼重設 session 中允許設定新密碼。
+
+管理頁可新增和修改課程基本資料（類別、介紹、年齡、扣堂、額外費用、發布狀態）與最新消息（分類、標題、內容、發布狀態）。尚不能建立上課場次，也不會在展示前台讀取這些資料；該整合及場次容量管理會在後續階段完成。
 
 如果未設定 Supabase 環境變數，登入會停用，管理頁不會顯示資料。
 
