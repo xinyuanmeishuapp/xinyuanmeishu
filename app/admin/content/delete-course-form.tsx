@@ -1,6 +1,7 @@
 "use client";
 
 import { deleteCourse } from "../actions";
+import { ConfirmedDeleteForm } from "@/app/components/confirmed-delete-form";
 
 export function DeleteCourseForm({
   courseId,
@@ -10,17 +11,12 @@ export function DeleteCourseForm({
   courseName: string;
 }) {
   return (
-    <form
+    <ConfirmedDeleteForm
       action={deleteCourse}
-      className="admin-edit-form"
-      onSubmit={(event) => {
-        if (!window.confirm(`確定刪除「${courseName}」嗎？已有場次或預約紀錄的課程無法刪除。`)) {
-          event.preventDefault();
-        }
-      }}
-    >
-      <input type="hidden" name="id" value={courseId} />
-      <button className="admin-danger-button" type="submit">刪除課程</button>
-    </form>
+      idField="id"
+      recordId={courseId}
+      label={`永久刪除「${courseName}」及相關資料`}
+      warning="刪除後無法復原：此課程的所有場次、預約紀錄及相關堂數異動會一併刪除。相關方案保留，堂數餘額會依剩餘交易紀錄重新計算。"
+    />
   );
 }

@@ -21,7 +21,7 @@ const errorMessages: Record<string, string> = {
   student_save_failed: "學員資料儲存失敗。",
   student_add_failed: "新增學員失敗，請確認家庭資料及必填欄位。",
   student_delete_failed: "刪除學員失敗，請重新整理後再試。",
-  student_has_bookings: "此學員已有預約紀錄，為保留歷史資料無法刪除。",
+  student_not_found: "找不到要刪除的學員，請重新整理後再試。",
 };
 
 function taipeiDate(value: string, includeTime = true) {

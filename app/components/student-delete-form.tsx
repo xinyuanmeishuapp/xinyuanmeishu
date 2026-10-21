@@ -1,6 +1,4 @@
-"use client";
-
-import type { FormEvent } from "react";
+import { ConfirmedDeleteForm } from "./confirmed-delete-form";
 
 export function StudentDeleteForm({
   action,
@@ -9,16 +7,13 @@ export function StudentDeleteForm({
   action: (formData: FormData) => void | Promise<void>;
   studentId: string;
 }) {
-  function confirmDelete(event: FormEvent<HTMLFormElement>) {
-    if (!window.confirm("確定刪除此學員資料？已有預約紀錄的學員無法刪除，歷史預約與收款資料會保留。")) {
-      event.preventDefault();
-    }
-  }
-
   return (
-    <form action={action} onSubmit={confirmDelete}>
-      <input type="hidden" name="student_id" value={studentId} />
-      <button className="secondary-button" type="submit">刪除學員</button>
-    </form>
+    <ConfirmedDeleteForm
+      action={action}
+      idField="student_id"
+      recordId={studentId}
+      label="永久刪除學員及相關資料"
+      warning="刪除後無法復原：此學員的所有預約紀錄及相關堂數異動會一併刪除，剩餘堂數將依保留的交易紀錄重新計算。家庭共用的購課方案與其他學員資料不會刪除。"
+    />
   );
 }

@@ -87,16 +87,23 @@ export async function addStudentToHousehold(formData: FormData) {
 
 export async function deleteHouseholdStudent(formData: FormData) {
   const studentId = field(formData, "student_id");
-  if (!validUuid(studentId)) redirect("/my?tab=students&error=invalid_student");
+  if (!validUuid(studentId) || field(formData, "confirmation_phrase") !== "確認刪除") {
+    redirect("/my?tab=students&error=invalid_student");
+  }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("delete_student_record", { target_student_id: studentId });
+  const { error } = await supabase.rpc("delete_student_record", {
+    target_student_id: studentId,
+    confirmation_phrase: "確認刪除",
+  });
   if (error) {
-    if (error.message === "Student has booking history") {
-      redirect("/my?tab=students&error=student_has_bookings");
-    }
     console.error("Unable to delete guardian student record:", { code: error.code, message: error.message });
-    redirect("/my?tab=students&error=student_delete_failed");
+    const errorType = error.message === "Student not found"
+      ? "student_not_found"
+      : error.message === "Not authorized to delete this student"
+        ? "student_delete_not_authorized"
+        : "student_delete_failed";
+    redirect(`/my?tab=students&error=${errorType}`);
   }
   revalidatePath("/my");
   redirect("/my?tab=students&submitted=student_deleted");

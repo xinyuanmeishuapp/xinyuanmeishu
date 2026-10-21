@@ -23,7 +23,8 @@ const errorMessages: Record<string, string> = {
   invalid_student: "學員資料不完整或欄位超出長度限制。",
   student_add_failed: "新增學員失敗，請確認家庭資料及必填欄位。",
   student_delete_failed: "刪除學員失敗，請重新整理後再試。",
-  student_has_bookings: "此學員已有預約紀錄，為保留歷史資料無法刪除。",
+  student_not_found: "找不到要刪除的學員，請重新整理後再試。",
+  student_delete_not_authorized: "您沒有權限刪除此學員，請聯絡工作室。",
   signout_failed: "登出失敗，請重新嘗試。",
 };
 

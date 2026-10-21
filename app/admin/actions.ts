@@ -71,21 +71,20 @@ export async function saveCourse(formData: FormData) {
 
 export async function deleteCourse(formData: FormData) {
   const id = textField(formData, "id", 64);
-  if (!UUID_PATTERN.test(id)) redirect("/admin/content?error=invalid_course");
+  if (!UUID_PATTERN.test(id) || exactTextField(formData, "confirmation_phrase") !== "確認刪除") {
+    redirect("/admin/content?error=invalid_course");
+  }
 
   const { supabase } = await createAdminClient();
-  const { data, error } = await supabase
-    .from("courses")
-    .delete()
-    .eq("id", id)
-    .select("id");
+  const { error } = await supabase.rpc("delete_course_record", {
+    target_course_id: id,
+    confirmation_phrase: "確認刪除",
+  });
 
   if (error) {
-    if (error.code === "23503") redirect("/admin/content?error=course_in_use");
     console.error("Unable to delete course:", { code: error.code, message: error.message });
-    redirect("/admin/content?error=course_delete_failed");
+    redirect(`/admin/content?error=${error.message === "Course not found" ? "course_not_found" : "course_delete_failed"}`);
   }
-  if (!data.length) redirect("/admin/content?error=course_not_found");
 
   revalidatePath("/admin");
   revalidatePath("/admin/content");
@@ -253,16 +252,18 @@ export async function addStudentRecord(formData: FormData) {
 
 export async function deleteStudentRecord(formData: FormData) {
   const studentId = textField(formData, "student_id", 64);
-  if (!UUID_PATTERN.test(studentId)) redirect("/admin/operations?error=invalid_student");
+  if (!UUID_PATTERN.test(studentId) || exactTextField(formData, "confirmation_phrase") !== "確認刪除") {
+    redirect("/admin/operations?error=invalid_student");
+  }
 
   const { supabase } = await createAdminClient();
-  const { error } = await supabase.rpc("delete_student_record", { target_student_id: studentId });
+  const { error } = await supabase.rpc("delete_student_record", {
+    target_student_id: studentId,
+    confirmation_phrase: "確認刪除",
+  });
   if (error) {
-    if (error.message === "Student has booking history") {
-      redirect("/admin/operations?error=student_has_bookings");
-    }
     console.error("Unable to delete student record:", { code: error.code, message: error.message });
-    redirect("/admin/operations?error=student_delete_failed");
+    redirect(`/admin/operations?error=${error.message === "Student not found" ? "student_not_found" : "student_delete_failed"}`);
   }
   revalidatePath("/admin/operations");
   revalidatePath("/my");

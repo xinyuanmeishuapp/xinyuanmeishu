@@ -37,9 +37,7 @@ export default async function AdminPage({
   const errorMessage = params.error
     ? params.error === "invalid_course"
       ? "課程資料不完整，請檢查欄位與數值後再儲存。"
-      : params.error === "course_in_use"
-        ? "此課程已有場次或預約紀錄，為保留歷史資料無法刪除。"
-        : params.error === "course_not_found"
+      : params.error === "course_not_found"
           ? "找不到要刪除的課程，請重新整理後再試。"
           : params.error === "course_delete_failed"
             ? "刪除課程失敗，請稍後再試。"
