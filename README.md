@@ -1,60 +1,60 @@
-# 心願美術課程預約原型
+# 心願美術網站
 
-這是一個使用 HTML、CSS 與原生 JavaScript 製作的互動式展示原型，支援手機、平板與電腦螢幕，包含課程資訊、學員登記、剩餘堂數查詢、預約與管理畫面。管理畫面提供預約月曆、依學員姓名搜尋、學員資料展開／收納，以及最新消息與課程的新增、編輯、刪除。每堂課可設定預約扣堂數及額外費用；預約會依設定扣堂，取消時退回該預約扣除的堂數。額外費用僅展示與記錄於預約，不會透過原型實際收款。編輯內容會儲存於目前瀏覽器，並同步顯示在前台；這不是跨裝置或多人共用的正式內容管理系統。無需安裝套件。
+## 目前狀態
 
-## 本機預覽
+網站正從靜態展示原型遷移至 Next.js + Supabase。原本的前台保留在 `public\demo\`，網站根目錄暫時導向 `/demo/index.html`。Next.js 已加入受邀管理員 Email OTP 登入、Supabase cookie session、登入回呼，以及在伺服器端讀取 `profiles.role` 驗證管理員的基礎。
 
-可直接用瀏覽器開啟 `index.html`。若要以本機 HTTP 網址預覽，可在這個資料夾執行：
+此階段尚未完成家長註冊、家庭／學員建檔、購課收款、預約資料連線及正式管理功能。展示前台的表單資料仍在瀏覽器 `localStorage`。請勿輸入或收集真實兒童與家庭資料。
 
-```powershell
-python -m http.server 8000
-```
+## 本機開發
 
-接著開啟 `http://localhost:8000`。
-
-## 前台、管理畫面與程式更新
-
-前台與管理畫面使用同一個網站網址；一般導覽列提供家長使用的頁面，管理畫面從頁尾「管理者入口」進入，並有獨立的管理導覽。課程卡片只顯示「可報名」或「已額滿」，不顯示報名名額數字。這只是畫面區隔，原型沒有管理者登入或伺服器權限，不能用來保護真實學員資料。
-
-修改程式時，在 VS Code 編輯 `index.html`（頁面結構）、`styles.css`（外觀）或 `app.js`（互動功能），儲存後先用本機網站檢查。確認無誤後，在專案資料夾執行：
+複製環境範本，填入 Supabase Project URL、Publishable key 及本機網站網址：
 
 ```powershell
-git add .
-git commit -m "描述這次修改"
-git push
+Copy-Item .env.example .env.local
+npm install
+npm run dev
 ```
 
-推送到 GitHub 的 `main` 分支後，Vercel 會自動重新部署；部署完成後重新整理正式網址即可看到更新。
+開啟 `http://localhost:3000`。主要路徑：
 
-原型資料儲存在目前瀏覽器的 `localStorage`；更換瀏覽器或裝置不會同步。課程／消息內容使用 `wish-art-demo-content-v1`，學員資料使用 `wish-art-demo-students-v1`。後台的 DEMO 標示是刻意保留的：此版本沒有登入、伺服器或存取控制。範例學員及課表為虛構展示資料，請勿輸入真實個資，也不要把這個原型公開當正式服務使用。要重置展示內容，可在瀏覽器開發者工具的 Application/Storage 中刪除以上對應項目。
+- `/demo/index.html`：原靜態展示前台，資料只存在目前瀏覽器。
+- `/login`：管理員登入；必須先在 Supabase 建立帳號並授予管理員角色。
+- `/admin`：只有登入且資料庫 `profiles.role` 為 `admin` 才能進入。
 
-## Supabase 測試資料庫準備
+如果未設定 Supabase 環境變數，登入會停用，管理頁不會顯示資料。
 
-`supabase\migrations\20261021143000_initial_schema.sql` 是正式網站開發的第一份資料庫結構草稿。只有在新建立、沒有重要資料的測試 Supabase 專案中執行；於 Dashboard 開啟 **SQL Editor > New query**，貼上此檔完整內容後按 **Run**。請勿把資料庫密碼或 API key 放進 SQL、聊天或 GitHub。
+## Supabase Auth 設定
 
-這份 migration 建立基本資料表、RLS、家長家庭資料讀取政策、管理員角色檢查，以及原子化預約／取消扣堂 RPC。它**尚未完成**家長註冊與建立家庭、管理員新增學員／購課與收款、登入畫面、前端 Supabase 串接、付款處理、實際營運取消期限或正式環境安全審查；目前網頁仍使用瀏覽器 `localStorage`，所以 migration 執行後不會自動連上資料庫。先只用虛構資料開發及驗證，勿將此原型公開營運。
+1. 從 Supabase Project Settings 取得 **Project URL** 和 **Publishable key**（可公開的 `anon` key 也適用）。不要使用或放入 `service_role`／secret key。
+2. 本機 `.env.local` 設定：
 
-第一次建立管理員需要先透過 Supabase Auth 邀請／建立該管理者帳號，使 `profiles` 記錄生成，再由 SQL Editor 以專案管理者權限將該帳號的 `profiles.role` 設為 `admin`。不可提供公開註冊者自行設定角色的功能。
+   ```text
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+   NEXT_PUBLIC_SITE_URL=http://localhost:3000
+   ```
 
-## 正式上線建議
+3. 在 Supabase Authentication 的 URL Configuration 加入：
+   - `http://localhost:3000/auth/callback`
+   - `https://xinyuanmeishu.vercel.app/auth/callback`
+4. 在 Supabase Auth 建立或邀請管理員使用者。初始 migration 的 trigger 會建立其 `profiles` 記錄；之後以 Supabase SQL Editor 將**該使用者的 Auth UUID** 設為 `profiles.role = 'admin'`。不要開放公開註冊者自行選角色。
+5. 管理員登入頁採用既有帳號 Email OTP，不會自動建帳。伺服器每次請求都會驗證使用者和 `profiles.role`；資料庫 RLS 是資料存取的最後防線。
 
-### 建議方案
+## Vercel 部署
 
-- **前端與部署：** 使用 Next.js 或 React 建置正式網站，部署於 Vercel；網站、網域與 HTTPS 由正式環境設定。若希望前後端都放在單一供應商，也可選用具備 SSR/API 支援的平台。
-- **資料庫與後端：** 使用 Supabase PostgreSQL + Supabase Auth，後端以受控 API／Server Actions 存取資料。這類資料有學員、兄弟姐妹、購課方案、付款及預約等關聯，關聯式資料庫較容易維護交易一致性、報表與後台篩選。
-- **資料地區：** Supabase 常用區域包含新加坡；若要求資料留在台灣，先確認供應商目前可選的部署區域、備份位置及跨境傳輸需求，再決定託管平台。不要在確認合約與法規前承諾資料只儲存在台灣。
-- **帳號與權限：** 客戶使用電話 OTP 或電子郵件登入，只能讀取及修改自己的資料；管理員使用獨立帳號並啟用 MFA。所有授權必須在伺服器端與資料庫 RLS policy 驗證，不可只靠前端隱藏管理頁面。金鑰與服務角色密鑰僅放在伺服器端環境變數。
-- **付款：** 原型只記錄付款方式與轉帳末五碼，沒有串接金流。正式版優先使用有交易通知／Webhook 的金流服務並核對其台灣商家支援與費率；不要儲存信用卡資訊。現金收據與 LINE Pay 到帳確認要配合店家實際作業流程。
-- **個資保護：** 地址、兒童資料、緊急聯絡方式及帳務紀錄都屬需謹慎處理的資料。僅蒐集必要欄位、告知蒐集目的與保存期間、訂定刪除及匯出流程、限制管理員權限，並採 TLS、資料庫備份、存取稽核與事件通報程序。上線前請依實際營運情況確認台灣個資法與跨境資料處理要求。
+先在 Preview 分支驗證，再合併 `main`。Vercel Project Settings 的 Root Directory 使用 `./`，Framework Preset 使用 Next.js。於 Vercel Environment Variables 設定以下變數，至少包含 Preview 和 Production；設定後重新部署：
 
-### 正式版資料模型建議
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `NEXT_PUBLIC_SITE_URL`（正式環境為 `https://xinyuanmeishu.vercel.app`）
 
-1. `profiles`：登入帳號、角色與聯絡方式；以身分驗證提供者的使用者 ID 關聯。
-2. `students`：學員姓名、學校、年級及必要聯絡資訊；監護人與緊急聯絡資訊應限制管理權限。
-3. `student_siblings`：共享堂數的學員關係；明確記錄家庭／共享群組與同意關係。
-4. `packages`：購課紀錄、總堂數、到期日、付款方式與收款狀態。另設不可任意覆寫的堂數異動紀錄，包含預約扣堂、取消退堂與人工調整原因。
-5. `classes`、`class_sessions`：課程類型、上課時段、名額與開放狀態；課程內容和實際場次分開管理。
-6. `bookings`：學員／共享群組、場次、預約狀態、堂數異動紀錄與操作時間；以資料庫交易避免同時預約造成超額或重複扣堂。
-7. `announcements`：最新消息、課表公告及假期活動，並讓管理員可更新發布狀態與日期。
+`.env.local` 已忽略，不要提交。Publishable key 是前端可用的公開金鑰；**絕不可**將 `service_role`／secret key 放入 `NEXT_PUBLIC_*` 變數、瀏覽器或 GitHub。
 
-建議依序完成正式需求確認、流程原型驗收、資料表及權限設計，再建立 staging／production 環境、測試備份還原與權限規則，最後才匯入真實資料並公開網址。上線前還要確認店家地址／聯絡方式、實際收費與退費規則、取消預約時限、課程名額及到期日政策。
+## 資料庫狀態
+
+`supabase\migrations\20261021143000_initial_schema.sql` 是已建立的初始結構，含部分 RLS 和預約／取消 RPC。尚缺家長建立家庭、管理員新增學員／購課／收款、購課堂數入帳及完整 onboarding。已執行過的 migration 不要直接改寫；後續以新的 migration 增補，並先在測試資料和測試專案驗證。
+
+## 程式修改流程
+
+在 VS Code 修改並執行 `npm run build` 確認。先推送功能分支，透過 Vercel Preview 檢查；確認後再合併到 `main` 部署正式網站。避免直接把尚未測試的權限或資料庫變更部署至 Production。
