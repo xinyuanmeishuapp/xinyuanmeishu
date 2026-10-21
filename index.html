@@ -28,7 +28,10 @@
         <a href="#schedule" class="nav-link" data-view="schedule">課程與活動</a>
         <a href="#register" class="nav-link" data-view="register">加入學員</a>
         <a href="#lookup" class="nav-link" data-view="lookup">我的課程</a>
-        <a href="#admin" class="nav-link admin-link" data-view="admin">管理後台 <span>DEMO</span></a>
+      </nav>
+      <nav class="admin-nav" id="admin-nav" aria-label="管理導覽">
+        <strong>管理後台</strong>
+        <a href="#home">返回前台 <span aria-hidden="true">→</span></a>
       </nav>
     </header>
 
@@ -92,7 +95,7 @@
           <button class="schedule-tab" data-schedule="holiday" role="tab" aria-selected="false">連續假期活動</button>
         </div>
         <div class="class-grid" id="class-grid"></div>
-        <div class="schedule-footnote"><span>✳</span> 課程日期與名額為原型展示資料，正式上線前請由工作室更新。</div>
+        <div class="schedule-footnote"><span>✳</span> 課程日期與報名狀態為原型展示資料，正式上線前請由工作室更新。</div>
       </section>
 
       <section class="view page-view" id="view-register" data-page="register">
@@ -175,6 +178,7 @@
     <footer class="site-footer">
       <a class="brand footer-brand" href="#home"><span class="brand-mark" aria-hidden="true">心</span><span><strong>心願美術</strong><small>WISH ART STUDIO</small></span></a>
       <p>讓創作成為，日常的小小心願。</p>
+      <a class="admin-entry" href="#admin">管理者入口</a>
       <span>© 2026 心願美術・展示原型</span>
     </footer>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>

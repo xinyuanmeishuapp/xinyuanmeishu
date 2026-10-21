@@ -177,7 +177,7 @@ function renderClasses(filter = "all") {
     return `<article class="class-card">
       <div class="class-card-header"><div class="class-date"><span>${new Intl.DateTimeFormat("zh-TW", { month: "short" }).format(date)}</span><strong>${String(date.getDate()).padStart(2, "0")}</strong></div><span class="class-tag ${tagClass}">${escapeHtml(item.category)}</span></div>
       <h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.detail)}</p>
-      <div class="class-details"><span>${escapeHtml(item.time)} · ${escapeHtml(item.age)}</span><strong>剩 ${item.spots} 個名額</strong></div>
+      <div class="class-details"><span>${escapeHtml(item.time)} · ${escapeHtml(item.age)}</span><strong class="${Number(item.spots) > 0 ? "availability-open" : "availability-full"}">${Number(item.spots) > 0 ? "可報名" : "已額滿"}</strong></div>
       <div class="class-cost"><span>每次預約扣 ${Number(item.lessonCost ?? 1)} 堂</span><strong>${Number(item.extraFee ?? 0) > 0 ? `另收 NT$ ${Number(item.extraFee).toLocaleString()}` : "無額外費用"}</strong></div>
     </article>`;
   }).join("");
@@ -188,6 +188,7 @@ function navigate(viewName) {
   if (!target) return;
   document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view === target));
   document.querySelectorAll(".nav-link").forEach((link) => link.classList.toggle("active", link.dataset.view === viewName));
+  document.body.classList.toggle("admin-mode", viewName === "admin");
   document.getElementById("main-nav").classList.remove("open");
   document.getElementById("menu-toggle").setAttribute("aria-expanded", "false");
   if (viewName === "admin") renderAdmin();
