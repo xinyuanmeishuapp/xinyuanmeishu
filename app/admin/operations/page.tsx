@@ -2,11 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  addStudentRecord,
+  deleteStudentRecord,
   reviewGuardianRegistration,
   reviewPackageRequest,
   saveStudentRecord,
 } from "../actions";
 import { AdminNavigation } from "../admin-navigation";
+import { StudentDeleteForm } from "@/app/components/student-delete-form";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +19,9 @@ const errorMessages: Record<string, string> = {
   package_review_failed: "收款確認失敗，請確認方案仍有效。",
   invalid_student: "學員資料不完整或欄位超出長度限制。",
   student_save_failed: "學員資料儲存失敗。",
+  student_add_failed: "新增學員失敗，請確認家庭資料及必填欄位。",
+  student_delete_failed: "刪除學員失敗，請重新整理後再試。",
+  student_has_bookings: "此學員已有預約紀錄，為保留歷史資料無法刪除。",
 };
 
 function taipeiDate(value: string, includeTime = true) {
@@ -90,7 +96,7 @@ export default async function AdminOperationsPage({
         <div className="admin-page-heading"><h1>學員資料</h1><p>管理家庭審核、會員資料及收款確認</p></div>
         {errors.length > 0 && <p className="auth-warning" role="alert">部分後台資料讀取失敗。請確認最新 migration 已在 Supabase 執行；詳細錯誤請查看伺服器紀錄。</p>}
         {params.error && <p className="auth-warning" role="alert">{errorMessages[params.error] ?? "操作未完成，請重新嘗試。"}</p>}
-        {params.saved && <p className="auth-message" role="status">{params.saved === "registration" ? "家庭審核狀態已更新。" : params.saved === "payment" ? "收款處理完成，堂數已依方案規則入帳。" : "學員資料已更新。"}</p>}
+        {params.saved && <p className="auth-message" role="status">{params.saved === "registration" ? "家庭審核狀態已更新。" : params.saved === "payment" ? "收款處理完成，堂數已依方案規則入帳。" : params.saved === "student_added" ? "學員資料已新增。" : params.saved === "student_deleted" ? "學員資料已刪除。" : "學員資料已更新。"}</p>}
 
         <section className="admin-section" id="applications">
           <h2>家庭資料審核</h2>
@@ -102,7 +108,10 @@ export default async function AdminOperationsPage({
               return <article className="admin-record guardian-record-body" key={household.id}>
                 <strong>{household.name} · {reviewStatus}</strong>
                 <span>登記時間：{taipeiDate(household.created_at)}</span>
-                {familyStudents.map((student) => <span key={student.id}>{student.child_name} · {student.school} · {student.grade} · 緊急電話 {student.emergency_phone} · 地址 {student.home_address}</span>)}
+                {familyStudents.map((student) => <div className="guardian-record-body" key={student.id}>
+                  <span>{student.child_name} · {student.school} · {student.grade} · 緊急電話 {student.emergency_phone} · 地址 {student.home_address}</span>
+                  <StudentDeleteForm action={deleteStudentRecord} studentId={student.id} />
+                </div>)}
                 {household.review_status === "pending" && <div className="admin-inline-actions">
                   <form action={reviewGuardianRegistration}><input type="hidden" name="household_id" value={household.id} /><button name="decision" value="approve" type="submit">通過審核</button></form>
                   <form action={reviewGuardianRegistration}><input type="hidden" name="household_id" value={household.id} /><button className="secondary-button" name="decision" value="reject" type="submit">退回申請</button></form>
@@ -116,6 +125,7 @@ export default async function AdminOperationsPage({
         <section className="admin-section" id="students">
           <h2>會員資料與學員資料</h2>
           <p>僅顯示已通過審核的會員，可依學員姓名搜尋及維護資料。</p>
+          <p><a href="/admin/operations/export">匯出全部學員 Excel（含購課、堂數與預約紀錄）</a></p>
           <form action="/admin/operations" className="admin-search-form">
             <label>依學員姓名查詢<input name="q" defaultValue={query} maxLength={100} placeholder="輸入小孩姓名" /></label>
             <button type="submit">查詢</button>
@@ -126,18 +136,30 @@ export default async function AdminOperationsPage({
               .filter((student) => !query || student.child_name.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
             return <details className="admin-record" key={household.id}>
               <summary>{household.name}<span>已審核會員 · {familyStudents.length} 位學員</span></summary>
+              <form action={addStudentRecord} className="admin-edit-form">
+                <input type="hidden" name="household_id" value={household.id} />
+                <h3>新增學員</h3>
+                <label>小孩姓名<input name="child_name" maxLength={120} required /></label>
+                <label>就讀學校<input name="school" maxLength={160} required /></label>
+                <label>年級<input name="grade" maxLength={80} required /></label>
+                <label>家中地址<input name="home_address" maxLength={500} required /></label>
+                <label>家長姓名<input name="guardian_name" maxLength={120} required /></label>
+                <label>緊急聯絡人電話<input name="emergency_phone" minLength={7} maxLength={40} required /></label>
+                <button type="submit">新增學員</button>
+              </form>
               {familyStudents.map((student) => <details className="admin-record admin-member-student" key={student.id}>
-            <summary>{student.child_name} · {householdNames.get(student.household_id) ?? "家庭"}<span>{student.school} · {student.grade}</span></summary>
-            <form action={saveStudentRecord} className="admin-edit-form">
-              <input type="hidden" name="student_id" value={student.id} />
-              <label>小孩姓名<input name="child_name" defaultValue={student.child_name} maxLength={120} required /></label>
-              <label>就讀學校<input name="school" defaultValue={student.school} maxLength={160} required /></label>
-              <label>年級<input name="grade" defaultValue={student.grade} maxLength={80} required /></label>
-              <label>家中地址<input name="home_address" defaultValue={student.home_address} maxLength={500} required /></label>
-              <label>家長姓名<input name="guardian_name" defaultValue={student.guardian_name} maxLength={120} required /></label>
-              <label>緊急聯絡人電話<input name="emergency_phone" defaultValue={student.emergency_phone} minLength={7} maxLength={40} required /></label>
-              <button type="submit">儲存學員資料</button>
-            </form>
+                <summary>{student.child_name} · {householdNames.get(student.household_id) ?? "家庭"}<span>{student.school} · {student.grade}</span></summary>
+                <form action={saveStudentRecord} className="admin-edit-form">
+                  <input type="hidden" name="student_id" value={student.id} />
+                  <label>小孩姓名<input name="child_name" defaultValue={student.child_name} maxLength={120} required /></label>
+                  <label>就讀學校<input name="school" defaultValue={student.school} maxLength={160} required /></label>
+                  <label>年級<input name="grade" defaultValue={student.grade} maxLength={80} required /></label>
+                  <label>家中地址<input name="home_address" defaultValue={student.home_address} maxLength={500} required /></label>
+                  <label>家長姓名<input name="guardian_name" defaultValue={student.guardian_name} maxLength={120} required /></label>
+                  <label>緊急聯絡人電話<input name="emergency_phone" defaultValue={student.emergency_phone} minLength={7} maxLength={40} required /></label>
+                  <button type="submit">儲存學員資料</button>
+                </form>
+                <StudentDeleteForm action={deleteStudentRecord} studentId={student.id} />
               </details>)}
             </details>;
           })}{approvedHouseholds.length === 0 && <p>{query ? "沒有符合姓名查詢的已審核會員。" : "目前沒有已審核會員資料。"}</p>}</div>

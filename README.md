@@ -4,7 +4,7 @@
 
 網站使用 Next.js + Supabase。正式首頁讀取課程資料、唯讀行事曆和最新消息；課程、場次與最新消息均不再有獨立發布開關，新增或儲存後會立即開放或顯示。管理員可新增、編輯及刪除課程、場次和最新消息；已有場次或預約紀錄的課程，以及已有預約紀錄的場次無法刪除，以保留歷史資料。家長可建立帳號、送交家庭／學員登記審核，通過後申請購課、檢視堂數並預約或取消課程。管理員可設定課程名稱與老師、建立單次或每週固定場次、審核家庭、設定 5／10 堂價格與效期、確認收款入帳、管理名額及取消時限。原靜態展示版保留在 `public\demo\`，僅供參考，不是正式資料來源。
 
-家長及管理員共用 Email＋密碼登入；伺服器依 `profiles.role` 導向及保護頁面，資料庫 RLS 和安全 RPC 控制家庭資料及預約／堂數異動。家長送交資料時須勾選監護人同意，系統記錄同意時間。兒童個資屬敏感資料，請先在測試帳號和測試資料完成整合驗證，再收集真實資料。
+家長及管理員共用 Email＋密碼登入；伺服器依 `profiles.role` 導向及保護頁面，資料庫 RLS 和安全 RPC 控制家庭資料及預約／堂數異動。家長送交資料時須勾選監護人同意，系統記錄同意時間。管理員及家庭會員可新增學員；只有沒有任何預約紀錄的學員才可刪除，以保留預約與交易歷史。管理員可下載含學員資料、購課、堂數異動、購課申請及預約紀錄的 Excel；家庭共享方案餘額按方案／家庭呈現，不視為個別學員專屬堂數。兒童個資屬敏感資料，請先在測試帳號和測試資料完成整合驗證，再收集真實資料，下載檔案亦應妥善保管。
 
 ## 本機開發
 
@@ -22,9 +22,9 @@ npm run dev
 - `/register`：家長 Email＋密碼註冊；依 Supabase Auth 設定可能需要先驗證 Email。
 - `/register/details`：家長提交家庭及學員資料，等待管理員審核。
 - `/login`：家長與管理員登入／重設密碼。
-- `/my`：家長會員中心預設顯示預約課程，分頁依序為預約課程、預約紀錄、學生資料及購課方案；剩餘堂數在購課方案分頁查看，並提供家庭資料、購課申請及預約／取消。
+- `/my`：家長會員中心預設顯示預約課程，分頁依序為預約課程、預約紀錄、學生資料及購課方案；剩餘堂數在購課方案分頁查看，並提供家庭資料、學員新增／刪除、購課申請及預約／取消。
 - `/admin`：後台首頁，顯示課程行事曆、建立單次或每週固定場次、編輯場次及近期預約紀錄。
-- `/admin/operations`：家庭審核、學員姓名查詢、會員資料、堂數及收款紀錄、待確認收款；只有 `profiles.role = 'admin'` 可進入。
+- `/admin/operations`：家庭審核、學員姓名查詢、會員資料、堂數及收款紀錄、待確認收款與全部學員 Excel 匯出；只有 `profiles.role = 'admin'` 可進入。
 - `/admin/content`：新增及管理課程名稱、上課老師與最新消息。
 - `/admin/settings`：管理 5／10 堂方案價格、效期與預約取消規則。
 - `/login/update-password`：只在有效的密碼重設 session 中允許設定新密碼。
@@ -65,7 +65,7 @@ npm run dev
 
 ## 資料庫狀態
 
-依序執行 `supabase\migrations\20261021143000_initial_schema.sql`、`supabase\migrations\20261021190000_guardian_operations.sql`、`supabase\migrations\20261021193000_booking_and_purchase_logic.sql`、`supabase\migrations\20261021200500_custom_course_categories.sql`、`supabase\migrations\20261021210000_weekly_class_sessions_and_teachers.sql`、`supabase\migrations\20261021211500_courses_always_available.sql`、`supabase\migrations\20261021213000_announcements_always_published.sql` 及 `supabase\migrations\20261021214000_sessions_always_published.sql`。營運 migration 建立家長登記審核、方案設定、購課請款／收款入帳、取消時限與會員課程預約所需 RPC 和 RLS；後續 migration 固定購課報價／效期、隱藏公開場次人數、阻擋未核准家庭預約與同學員重疊課程、維護場次名額限制，開放自訂課程名稱，新增上課老師欄位與每週固定課程建立 RPC（日期範圍最多 730 天），並將課程、場次及最新消息設為不需獨立發布即可使用。已執行過的 migration 不要直接改寫；每次 schema 更新都新增 migration。
+依序執行 `supabase\migrations\20261021143000_initial_schema.sql`、`supabase\migrations\20261021190000_guardian_operations.sql`、`supabase\migrations\20261021193000_booking_and_purchase_logic.sql`、`supabase\migrations\20261021200500_custom_course_categories.sql`、`supabase\migrations\20261021210000_weekly_class_sessions_and_teachers.sql`、`supabase\migrations\20261021211500_courses_always_available.sql`、`supabase\migrations\20261021213000_announcements_always_published.sql`、`supabase\migrations\20261021214000_sessions_always_published.sql` 及 `supabase\migrations\20261021223000_student_management.sql`。營運 migration 建立家長登記審核、方案設定、購課請款／收款入帳、取消時限與會員課程預約所需 RPC 和 RLS；後續 migration 固定購課報價／效期、隱藏公開場次人數、阻擋未核准家庭預約與同學員重疊課程、維護場次名額限制，開放自訂課程名稱，新增上課老師欄位與每週固定課程建立 RPC（日期範圍最多 730 天），並將課程、場次及最新消息設為不需獨立發布即可使用。學員管理 migration 提供受權限控管的新增／刪除函式，並阻止刪除已有預約歷史的學員。已執行過的 migration 不要直接改寫；每次 schema 更新都新增 migration。
 
 **新增 migration 尚需在 Supabase SQL Editor／受控 migration 工具執行後才可正常運作。**先於測試專案依序執行尚未套用的 migration。使用虛構帳戶與資料驗證：家長和管理員的 RLS 隔離、Email 驗證及密碼流程、家庭審核、三種付款方式、確認收款後堂數／效期、場次名額競爭、報價固定、預約重複與重疊阻擋、取消截止前後的退堂規則，以及每週固定場次遇到重複日期時整批回滾。確認測試成功前，不要讓家長登記真實兒童資料或將新版合併至 Production。
 

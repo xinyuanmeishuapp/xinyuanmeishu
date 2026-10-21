@@ -39,6 +39,69 @@ export async function requestPackage(formData: FormData) {
   redirect("/my?tab=packages&submitted=package");
 }
 
+export async function addStudentToHousehold(formData: FormData) {
+  const childName = field(formData, "child_name");
+  const school = field(formData, "school");
+  const grade = field(formData, "grade");
+  const homeAddress = field(formData, "home_address");
+  const guardianName = field(formData, "guardian_name");
+  const emergencyPhone = field(formData, "emergency_phone");
+  if (
+    !childName || childName.length > 120 ||
+    !school || school.length > 160 ||
+    !grade || grade.length > 80 ||
+    !homeAddress || homeAddress.length > 500 ||
+    !guardianName || guardianName.length > 120 ||
+    emergencyPhone.length < 7 || emergencyPhone.length > 40
+  ) redirect("/my?tab=students&error=invalid_student");
+
+  const supabase = await createClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) redirect("/login");
+  const { data: membership, error: membershipError } = await supabase
+    .from("household_members").select("household_id").eq("user_id", user.id).limit(1).maybeSingle();
+  if (membershipError || !membership) {
+    console.error("Unable to verify household for student creation:", {
+      code: membershipError?.code,
+      message: membershipError?.message,
+    });
+    redirect("/my?tab=students&error=student_add_failed");
+  }
+
+  const { error } = await supabase.rpc("create_student_record", {
+    target_household_id: membership.household_id,
+    target_child_name: childName,
+    target_school: school,
+    target_grade: grade,
+    target_home_address: homeAddress,
+    target_guardian_name: guardianName,
+    target_emergency_phone: emergencyPhone,
+  });
+  if (error) {
+    console.error("Unable to add guardian student record:", { code: error.code, message: error.message });
+    redirect("/my?tab=students&error=student_add_failed");
+  }
+  revalidatePath("/my");
+  redirect("/my?tab=students&submitted=student_added");
+}
+
+export async function deleteHouseholdStudent(formData: FormData) {
+  const studentId = field(formData, "student_id");
+  if (!validUuid(studentId)) redirect("/my?tab=students&error=invalid_student");
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_student_record", { target_student_id: studentId });
+  if (error) {
+    if (error.message === "Student has booking history") {
+      redirect("/my?tab=students&error=student_has_bookings");
+    }
+    console.error("Unable to delete guardian student record:", { code: error.code, message: error.message });
+    redirect("/my?tab=students&error=student_delete_failed");
+  }
+  revalidatePath("/my");
+  redirect("/my?tab=students&submitted=student_deleted");
+}
+
 export async function reserveClass(formData: FormData) {
   const studentId = field(formData, "student_id");
   const sessionId = field(formData, "session_id");

@@ -215,6 +215,60 @@ export async function saveStudentRecord(formData: FormData) {
   redirect("/admin/operations?saved=student");
 }
 
+export async function addStudentRecord(formData: FormData) {
+  const householdId = textField(formData, "household_id", 64);
+  const student = {
+    target_child_name: exactTextField(formData, "child_name"),
+    target_school: exactTextField(formData, "school"),
+    target_grade: exactTextField(formData, "grade"),
+    target_home_address: exactTextField(formData, "home_address"),
+    target_guardian_name: exactTextField(formData, "guardian_name"),
+    target_emergency_phone: exactTextField(formData, "emergency_phone"),
+  };
+  if (
+    !UUID_PATTERN.test(householdId) ||
+    !student.target_child_name || student.target_child_name.length > 120 ||
+    !student.target_school || student.target_school.length > 160 ||
+    !student.target_grade || student.target_grade.length > 80 ||
+    !student.target_home_address || student.target_home_address.length > 500 ||
+    !student.target_guardian_name || student.target_guardian_name.length > 120 ||
+    student.target_emergency_phone.length < 7 || student.target_emergency_phone.length > 40
+  ) {
+    redirect("/admin/operations?error=invalid_student");
+  }
+
+  const { supabase } = await createAdminClient();
+  const { error } = await supabase.rpc("create_student_record", {
+    target_household_id: householdId,
+    ...student,
+  });
+  if (error) {
+    console.error("Unable to add student record:", { code: error.code, message: error.message });
+    redirect("/admin/operations?error=student_add_failed");
+  }
+  revalidatePath("/admin/operations");
+  revalidatePath("/my");
+  redirect("/admin/operations?saved=student_added");
+}
+
+export async function deleteStudentRecord(formData: FormData) {
+  const studentId = textField(formData, "student_id", 64);
+  if (!UUID_PATTERN.test(studentId)) redirect("/admin/operations?error=invalid_student");
+
+  const { supabase } = await createAdminClient();
+  const { error } = await supabase.rpc("delete_student_record", { target_student_id: studentId });
+  if (error) {
+    if (error.message === "Student has booking history") {
+      redirect("/admin/operations?error=student_has_bookings");
+    }
+    console.error("Unable to delete student record:", { code: error.code, message: error.message });
+    redirect("/admin/operations?error=student_delete_failed");
+  }
+  revalidatePath("/admin/operations");
+  revalidatePath("/my");
+  redirect("/admin/operations?saved=student_deleted");
+}
+
 export async function savePackagePlans(formData: FormData) {
   const { supabase } = await createAdminClient();
   const plans: Array<{

@@ -2,7 +2,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseConfig } from "@/lib/supabase/config";
-import { cancelBooking, guardianSignOut, requestPackage, reserveClass } from "./actions";
+import { StudentDeleteForm } from "@/app/components/student-delete-form";
+import {
+  addStudentToHousehold,
+  cancelBooking,
+  deleteHouseholdStudent,
+  guardianSignOut,
+  requestPackage,
+  reserveClass,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +20,10 @@ const errorMessages: Record<string, string> = {
   invalid_booking: "預約資料無效，請重新整理頁面後再試。",
   booking_failed: "目前無法完成預約。請檢查可用堂數、課程名額和是否重複預約。",
   cancellation_failed: "取消失敗；可能已超過課程開始時間或預約已處理。",
+  invalid_student: "學員資料不完整或欄位超出長度限制。",
+  student_add_failed: "新增學員失敗，請確認家庭資料及必填欄位。",
+  student_delete_failed: "刪除學員失敗，請重新整理後再試。",
+  student_has_bookings: "此學員已有預約紀錄，為保留歷史資料無法刪除。",
   signout_failed: "登出失敗，請重新嘗試。",
 };
 
@@ -225,28 +237,52 @@ export default async function GuardianPage({
           </nav>
         )}
         {params.error && <p className="auth-warning" role="alert">{errorMessages[params.error] ?? "操作未完成，請重新嘗試。"}</p>}
-        {params.submitted && <p className="auth-message" role="status">{params.submitted === "package" ? "購課申請已送出，待管理員確認收款。" : params.submitted === "booking" ? "課程預約完成。" : params.submitted === "cancellation" ? "預約已取消；是否退回堂數依取消時限而定。" : "資料已送出。"}</p>}
+        {params.submitted && <p className="auth-message" role="status">{params.submitted === "package" ? "購課申請已送出，待管理員確認收款。" : params.submitted === "booking" ? "課程預約完成。" : params.submitted === "cancellation" ? "預約已取消；是否退回堂數依取消時限而定。" : params.submitted === "student_added" ? "學員資料已新增。" : params.submitted === "student_deleted" ? "學員資料已刪除。" : "資料已送出。"}</p>}
         {household.review_status !== "approved" ? (
           <section className="admin-section" id="review-status">
             <h2>{household.review_status === "pending" ? "資料審核中" : "資料尚未通過審核"}</h2>
             <p>{household.review_status === "pending" ? "工作室確認資料後，會開放購課與預約功能。" : "可修正登記資料後重新送出，或聯絡工作室協助。"}</p>
             <h3>已登記學員</h3>
-            {students.map((student) => <p key={student.id}>{student.child_name} · {student.school} · {student.grade}</p>)}
+            <div className="admin-record-list">{students.map((student) => <article className="admin-record guardian-record-body" key={student.id}>
+              <span>{student.child_name} · {student.school} · {student.grade}</span>
+              <StudentDeleteForm action={deleteHouseholdStudent} studentId={student.id} />
+            </article>)}</div>
+            <form action={addStudentToHousehold} className="admin-edit-form">
+              <h3>新增學員</h3>
+              <label>小孩姓名<input name="child_name" maxLength={120} required /></label>
+              <label>就讀學校<input name="school" maxLength={160} required /></label>
+              <label>年級<input name="grade" maxLength={80} required /></label>
+              <label>家中地址<input name="home_address" maxLength={500} required /></label>
+              <label>家長姓名<input name="guardian_name" maxLength={120} required /></label>
+              <label>緊急聯絡人電話<input name="emergency_phone" minLength={7} maxLength={40} required /></label>
+              <button type="submit">新增學員</button>
+            </form>
             {household.review_status === "rejected" && <Link href="/register/details">修正並重新送出資料</Link>}
           </section>
         ) : (
           <>
             {activeTab === "students" && <section className="admin-section" id="students">
               <h2>學員資料</h2>
+              <form action={addStudentToHousehold} className="admin-edit-form">
+                <h3>新增學員</h3>
+                <label>小孩姓名<input name="child_name" maxLength={120} required /></label>
+                <label>就讀學校<input name="school" maxLength={160} required /></label>
+                <label>年級<input name="grade" maxLength={80} required /></label>
+                <label>家中地址<input name="home_address" maxLength={500} required /></label>
+                <label>家長姓名<input name="guardian_name" maxLength={120} required /></label>
+                <label>緊急聯絡人電話<input name="emergency_phone" minLength={7} maxLength={40} required /></label>
+                <button type="submit">新增學員</button>
+              </form>
               <div className="admin-record-list">{students.map((student) => (
                 <article className="admin-record" key={student.id}>
                   <div className="guardian-record-body">
                     <strong>{student.child_name}</strong><span>{student.school} · {student.grade}</span>
                     <span>緊急聯絡人：{student.guardian_name} · {student.emergency_phone}</span>
                     <span>地址：{student.home_address}</span>
+                    <StudentDeleteForm action={deleteHouseholdStudent} studentId={student.id} />
                   </div>
                 </article>
-              ))}</div>
+              ))}{students.length === 0 && <p>目前尚無學員資料。</p>}</div>
             </section>}
             {activeTab === "packages" && <section className="admin-section" id="packages">
               <div className="guardian-balance-summary">
