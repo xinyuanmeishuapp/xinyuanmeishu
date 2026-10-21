@@ -2,7 +2,7 @@
 
 ## 目前狀態
 
-網站正從靜態展示原型遷移至 Next.js + Supabase。原本的前台保留在 `public\demo\`，網站根目錄暫時導向 `/demo/index.html`。Next.js 已加入受邀管理員 Email OTP 登入、Supabase cookie session、登入回呼，以及在伺服器端讀取 `profiles.role` 驗證管理員的基礎。
+網站正從靜態展示原型遷移至 Next.js + Supabase。原本的前台保留在 `public\demo\`，網站根目錄暫時導向 `/demo/index.html`。Next.js 已加入受邀管理員 Email＋密碼登入、密碼重設、Supabase cookie session，以及在伺服器端讀取 `profiles.role` 驗證管理員的基礎。
 
 此階段尚未完成家長註冊、家庭／學員建檔、購課收款、預約資料連線及正式管理功能。展示前台的表單資料仍在瀏覽器 `localStorage`。請勿輸入或收集真實兒童與家庭資料。
 
@@ -19,8 +19,9 @@ npm run dev
 開啟 `http://localhost:3000`。主要路徑：
 
 - `/demo/index.html`：原靜態展示前台，資料只存在目前瀏覽器。
-- `/login`：管理員登入；必須先在 Supabase 建立帳號並授予管理員角色。
+- `/login`：管理員 Email＋密碼登入及重設密碼；必須先在 Supabase 建立帳號並授予管理員角色。
 - `/admin`：只有登入且資料庫 `profiles.role` 為 `admin` 才能進入。
+- `/login/update-password`：只在有效的密碼重設 session 中允許設定新密碼。
 
 如果未設定 Supabase 環境變數，登入會停用，管理頁不會顯示資料。
 
@@ -37,9 +38,12 @@ npm run dev
 
 3. 在 Supabase Authentication 的 URL Configuration 加入：
    - `http://localhost:3000/auth/callback`
+   - `http://localhost:3000/auth/recovery/callback`
    - `https://xinyuanmeishu.vercel.app/auth/callback`
+   - `https://xinyuanmeishu.vercel.app/auth/recovery/callback`
 4. 在 Supabase Auth 建立或邀請管理員使用者。初始 migration 的 trigger 會建立其 `profiles` 記錄；之後以 Supabase SQL Editor 將**該使用者的 Auth UUID** 設為 `profiles.role = 'admin'`。不要開放公開註冊者自行選角色。
-5. 管理員登入頁採用既有帳號 Email OTP，不會自動建帳。伺服器每次請求都會驗證使用者和 `profiles.role`；資料庫 RLS 是資料存取的最後防線。
+5. 初次設定密碼時，於登入頁使用「忘記密碼」寄送重設信，再設定至少 12 個字元的唯一密碼。Supabase 預設郵件服務有收件人和寄送頻率限制；正式使用前應設定自訂 SMTP。
+6. 管理員登入採 Email＋密碼，不會自動建帳。伺服器每次請求都會驗證使用者和 `profiles.role`；資料庫 RLS 是資料存取的最後防線。Supabase Auth 負責安全保存密碼，不自行儲存密碼。
 
 ## Vercel 部署
 
